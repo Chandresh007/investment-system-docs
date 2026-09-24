@@ -1,5 +1,14 @@
 # Investment Research System
 
+## Current strategic status — 2026-09-21
+
+Phase 2.5 implementation is complete, ready for independent review, NOT YET FROZEN.
+Phase 2.6 has not started. Strategic verdict: **CONDITIONAL PASS**, not production
+PIT or predictive-performance certification. The closed-loop section below and
+[strategic review](STRATEGIC_ARCHITECTURE_REVIEW.md) qualify older educational claims
+of universal immutability/PIT correctness. Formula contracts remain frozen;
+source qualification, membership knowledge time and immutable publication remain gates.
+
 ## Complete Research, Data, Mathematical, and Algorithmic Blueprint
 
 This document explains the investment research system from first principles. It is
@@ -158,7 +167,7 @@ INVESTMENT DECISION
 | Raw Data | Provider/API responses | Immutable raw objects | Audit trail and reproducibility | Provider changes, missing payloads, duplicate downloads | IMPLEMENTED |
 | Temporal/PIT Engine | Raw objects and timestamps | PIT-eligible records | Prevent look-ahead bias | Wrong `available_at`, future leakage | IMPLEMENTED / FROZEN |
 | Atomic Facts | Raw SEC, market, macro, news data | Normalized source-level rows | Preserve facts before interpretation | Bad fiscal identity, wrong units | IMPLEMENTED for fundamentals, market, macro/news basics |
-| Normalized Features | Atomic facts | Deterministic metrics | Convert facts into comparable research evidence | Bad denominators, missing data, calendar/fiscal mistakes | IMPLEMENTED for fundamentals and market |
+| Normalized Features | Atomic facts | Deterministic metrics | Convert facts into comparable research evidence | Bad denominators, missing data, calendar/fiscal mistakes | IMPLEMENTED for fundamentals, market and estimates |
 | Factors | Multiple features | Composite dimensions | Combine related evidence | Overfitting, arbitrary weights | PLANNED |
 | Detector Signals | Factors and rules | Explainable signal events | Detect inflections | Screen overfitting, hidden assumptions | PLANNED |
 | Historical Backtesting | PIT features/signals | Historical performance evidence | Test whether signals worked | Survivorship and look-ahead bias | PLANNED |
@@ -184,7 +193,7 @@ PIT correctness upward.
 | SEC fundamentals | Revenue, EPS, margins, cash flow | SEC Company Facts/XBRL | Business performance | Filing date must be <= T | IMPLEMENTED / FROZEN for Phase 2.2 features |
 | Market data | OHLCV, prices, volume | Yahoo market connector in current repo | Momentum, liquidity, risk | Price/retrieval and corporate actions must be PIT | IMPLEMENTED / FROZEN for Phase 2.4 |
 | Corporate actions | Splits, reverse splits, dividends | Market data providers | Correct price/return math | Action usable only when available at T | IMPLEMENTED / FROZEN |
-| Analyst estimates | EPS/revenue estimates, consensus, revisions | Future commercial provider | Expectations and revision momentum | Estimate event must be available at T | DESIGNED / NOT IMPLEMENTED |
+| Analyst estimates | EPS/revenue estimates, consensus, revisions | Future commercial provider | Expectations and revision momentum | Estimate event must be available at T | IMPLEMENTATION COMPLETE / INDEPENDENT REVIEW PENDING |
 | Peer/industry data | GICS, peers, market share, peer metrics | Future providers and normalized fundamentals | Relative context | Historical membership only | PLANNED |
 | Macro data | CPI, rates, unemployment, GDP | FRED connector | Macro backdrop | Observation/revision availability matters | IMPLEMENTED basics / PLANNED expansion |
 | News/events | Earnings, product launches, customer wins | RSS/news connectors, future extraction | Catalysts and context | Publication time must be <= T | IMPLEMENTED basics / PLANNED structure |
@@ -211,7 +220,8 @@ Survivorship bias occurs when a backtest only includes companies that survived
 until today. If a strategy avoids bankruptcies only because the database removed
 bankrupt stocks from history, the backtest is fake. The current project has a
 `historical_universe` table with inclusive `start_date` and exclusive `end_date`
-semantics.
+semantics. It lacks a separate knowledge timestamp and versioned corrections;
+these effective intervals alone do not prove historical membership was known at T.
 
 ## 2. SEC Fundamental Data
 
@@ -311,11 +321,12 @@ total return index
 market features
 ```
 
-Raw price is what the provider reports for a date. Split-continuous price adjusts
+The required raw price is the as-traded price for a date; a provider field called
+close is not sufficient proof of that basis. Split-continuous price adjusts
 old prices for PIT-known splits so pre-split and post-split prices can be
 compared. Total return index also incorporates PIT-known dividends.
 
-## 4. Analyst Estimates - PLANNED / NOT YET FROZEN
+## 4. Analyst Estimates - IMPLEMENTED / NOT YET FROZEN
 
 Analyst estimates represent expectations, not actuals.
 
@@ -493,7 +504,7 @@ SEC ingestion currently goes through raw SEC responses and normalization into
 `market_prices`. FRED and news ingestion have connector/normalization structures
 for economic and news data.
 
-Future estimates ingestion should follow the same boundary:
+Implemented synthetic estimates ingestion follows the same boundary; production qualification remains pending:
 
 ```text
 raw provider connector
@@ -1378,7 +1389,7 @@ mechanical trading.
 
 ---
 
-# Part XIII - Analyst Estimates - PLANNED / NOT YET FROZEN
+# Part XIII - Analyst Estimates - IMPLEMENTED / NOT YET FROZEN
 
 Analyst estimate systems convert individual forecasts into expectation signals.
 
@@ -1442,44 +1453,30 @@ This breaks around zero or negative EPS. If old EPS is `0.01` and new EPS is
 cents. If old EPS is `-0.10` and new EPS is `0.10`, a simple percentage formula
 is not a stable measure of improvement.
 
-One proposed scaled revision:
+Implemented scaled revision (the Phase 2.5 contract supersedes earlier proposals):
 
 ```text
-scaled_revision = (new - old) / max(abs(old), abs(new), floor)
+scaled_revision = (new - old) / max(abs(old), abs(new))
+both old and new zero -> 0
 ```
 
-Example:
-
-```text
-old = -0.10
-new = 0.10
-floor = 0.25
-scaled_revision = (0.10 - (-0.10)) / max(0.10, 0.10, 0.25)
-scaled_revision = 0.20 / 0.25 = 0.80
-```
-
-Strength: works across losses and near-zero estimates.
-
-Weakness: the floor is an architecture choice and affects magnitude.
+For `old=-0.10`, `new=0.10`, absolute change is `0.20`, scaled change is `2`.
+There is no positive floor. Scaled EPS is not a percentage-growth measure; inspect
+absolute change too. Consensus movement includes composition and provider corrections,
+so it must be distinguished from economic revision activity.
 
 ## Revision Breadth
 
-Example:
-
 ```text
-7 analysts increased estimates
-2 analysts decreased estimates
-1 analyst unchanged
+7 contributors up, 2 down, 1 unchanged
+breadth = (U-D)/(U+D) = 5/9
 ```
 
-Possible breadth:
-
-```text
-breadth = (up - down) / comparable_contributors
-```
-
-New initiations should generally not count as revisions because there is no
-prior same-analyst estimate to compare. Withdrawals should be tracked separately.
+Use one latest comparable economic update per contributor within `(T-30d,T]`.
+Latest UNCHANGED removes the directional vote. No directional updates means MISSING.
+Revision count counts distinct UP/DOWN economic events, not contributors. NEW,
+WITHDRAWAL and CORRECTION do not count or vote. Coverage must prove that a zero
+count is real. See the frozen [estimate contract](phase-2.5-estimates-spec.md).
 
 ## Absolute Target Versus Relative Horizon
 
@@ -1936,7 +1933,8 @@ price outperforming
 industry supportive
 ```
 
-This is stronger than any one signal alone.
+This may provide stronger evidence, but incremental value must be validated;
+correlated inputs are not independent confirmations.
 
 Risks:
 
@@ -2002,10 +2000,11 @@ EPS growth from Q2 to Q3:
 Estimate revision:
 
 ```text
-Q1 next-quarter consensus = 0.90
-Q2 next-quarter consensus = 1.00
-Q3 next-quarter consensus = 1.15
-Revision from Q2 to Q3 = +0.15
+Same absolute FY2027 Q4 target, observed at three research dates:
+T1 consensus = 0.90
+T2 consensus = 1.00
+T3 consensus = 1.15
+Revision from T2 to T3 for the same target = +0.15
 ```
 
 System path:
@@ -2081,13 +2080,15 @@ and backtested calibration before becoming an investment decision.
 | Phase 2.1 | Temporal/PIT Foundation | COMPLETE / ACCEPTED |
 | Phase 2.2 | Fundamental Features | COMPLETE |
 | Phase 2.4 | Market Features | COMPLETE / FROZEN |
-| Phase 2.5 | Analyst Estimates | ARCHITECTURE DESIGN / NOT IMPLEMENTED |
+| Phase 2.5 | Analyst Estimates | IMPLEMENTATION COMPLETE / NOT YET FROZEN |
 | Phase 2.6 | Peer / Industry Features | PLANNED |
 | Phase 2.7 | Factors | PLANNED |
 | Phase 2.8 | Signals / Detectors | PLANNED |
 | Phase 2.9 | Historical Backtester | PLANNED |
 | Phase 2.10 | Calibration / Ranking | PLANNED |
-| Phase 2.11 | AI Analyst | PLANNED |
+| Phase 2.11 | AI Analyst / deeper snapshot | PLANNED; valuation and evidence prerequisites |
+| Phase 2.12 | News/event intelligence expansion | PROPOSED |
+| Phase 2.13 | Business quality / source expansion | PROPOSED |
 
 ---
 
@@ -2160,3 +2161,213 @@ Time correctness always.
 Deterministic calculations before interpretation.
 AI last.
 ```
+
+# Part XXIX - Closed-Loop Research, Validation and Promotion
+
+This is the complete target lifecycle, not implemented runtime functionality:
+
+```text
+RAW DATA
+↓
+PIT DATA
+↓
+FEATURES
+↓
+FACTORS
+↓
+SIGNALS
+↓
+RESEARCH SNAPSHOT
+↓
+PREDICTION LEDGER
+↓
+FUTURE OUTCOMES
+↓
+OUTCOME LEDGER
+↓
+BACKTEST
+↓
+CALIBRATION
+↓
+CHALLENGER MODEL
+↓
+VALIDATION
+↓
+VERSIONED PROMOTION
+```
+
+Backtesting/calibration are development dependencies before a validated champion
+is deployed. At runtime the champion produces snapshots without seeing future
+outcomes. Evaluators later join matured labels through a separate data boundary.
+Promotion changes future runs only. AI consumes the frozen snapshot for cited
+synthesis; it is not a hidden source of truth, calculator or opaque ranking model.
+
+The system may measure, evaluate, calibrate, train candidates and recommend changes.
+It may NOT silently modify feature formulas, factor definitions, signal weights
+or production models after a correct/incorrect outcome. Preserve every version,
+trial and promotion decision. See [controlled learning](VALIDATION_CALIBRATION_AND_LEARNING.md).
+
+## Canonical research packet and multiple objectives
+
+A packet records research time, actual creation time, security, source/build and
+feature/factor/signal/model/calibration versions, values/statuses, rank universe,
+thesis/catalyst/risk/invalidation assertions and horizons. Predictions and outcomes
+are append-only, including abstentions and failures. Legacy FeatureValue rows alone
+are not an immutable ledger. See [ledger contract](RESEARCH_PREDICTION_AND_OUTCOME_LEDGER.md).
+
+Evaluate 3/6/12/24m absolute and SPY/sector/industry excess returns, forward drawdown,
+risk-adjusted paths where justified, delivered growth/margins/FCF, future estimate
+activity and assertion outcomes. Early growth, compounders, catalysts and risk
+have different primary objectives. Predeclare those choices and report secondary
+outcomes; do not optimize one arbitrary label or equate stock price with thesis truth.
+
+## Evidence families and valuation/quality dependencies
+
+Keep Fundamentals, Estimates, Market, Industry, Valuation, Catalysts, Business
+Quality, Risk and Macro/Event Context separately inspectable. Missing families
+remain visible. Test incremental contributions and double counting.
+
+A named valuation workstream includes DCF/intrinsic value, FCF yield, EV/Revenue,
+EV/EBITDA, economically valid P/E and PEG-style relationships, historical own bands,
+peer/growth-adjusted valuation, scenarios and margin of safety. Assumptions and
+share/enterprise-value bridges must be PIT and versioned. This is required before
+Phase 2.11 presents a complete investment research judgment, even if detector
+experiments precede it. No valuation module is implemented now.
+
+Qualitative evidence includes economic moat, switching costs, network effects,
+pricing power, cost/scale advantage, customer/supplier concentration, management
+execution, capital allocation, R&D productivity, competitive intensity, TAM, market
+share and product leadership. Combine structured evidence with cited AI interpretation;
+unknown metrics cannot be invented. See [comparison and roadmap](RESEARCH_PLATFORM_COMPARISON.md).
+
+## Source neutrality and canonical contracts
+
+Replaceable connectors are intentional. Institutional prices and estimates,
+transcripts, options, short interest, insider transactions, institutional ownership,
+alternative data, supply-chain and industry data must map into canonical internal
+contracts: stable identity, semantic basis/unit, timing, revisions, raw provenance,
+coverage and legal rights. A vendor change creates a new profile/build, never silently
+replaces historical evidence. Current legacy schemas do not yet provide every one
+of these guarantees; the estimate subsystem is a stronger starting pattern.
+
+Use [source trust](DATA_SOURCE_TRUST_AND_PIT.md) and the [risk register](DATA_PROVIDER_RISK_REGISTER.md)
+for qualifications. FRED vintage-aware persistence is a required future task before
+macro backtesting. Historical company classification needs knowledge time as well
+as effective time before peer features. Yahoo historical endpoints are not a PIT
+certificate. Generic raw storage and legacy feature updates require durability and
+snapshot boundaries before immutable-history claims.
+
+## Sequencing without casual renumbering
+
+| Stage | Deliverable / release gate |
+| --- | --- |
+| Before more feature families | Independent 2.5 review; qualify R1–R4/R6–R7 foundation issues from strategic review; plan recoverability |
+| 2.6 Peer / Industry | Bitemporal universe, identifier/classification evidence, delisted coverage; then peer statistics |
+| 2.7 Factors | Inspectable/versioned normalization, missingness and component contributions; valuation workstream can run alongside |
+| 2.8 Signals / detector | Rules first; minimal immutable snapshots and prediction publication before forward shadow claims |
+| 2.9 Historical backtester | Qualified historical sources; outcome ledger, execution and label contracts; replay and broad-universe tests |
+| 2.10 Calibration / evaluation | Mature labels, time-ordered walk-forward, overlap control, untouched holdout, drift and champion/challenger protocol |
+| 2.11 AI Analyst (existing number retained) | Deeper snapshot and cited synthesis, gated on valuation/quality evidence and basic event/assertion contracts |
+| 2.12 proposed extension | Production news/event intelligence with macro/policy exposure context and vintage data |
+| 2.13 proposed extension | Expanded business-quality and external-source coverage, following measured need |
+
+These are recommendations, not phase starts. Basic event/schema contracts must
+precede their use by AI; the later event phase adds production coverage. If a future
+roadmap changes phase numbers, record an explicit mapping and dependency decision.
+
+## Generalization, operations and independent challenge
+
+Historical replays freeze at T, then reveal future outcomes. Golden famous cases
+are explanatory and contaminated by inspection; broad historical universes must
+include failures and false positives. Unseen years, sectors, sizes and regimes,
+plus prospective shadow results, are necessary before promotion. Use purging and
+embargo concepts where label intervals overlap, respect maturity and log all trials.
+See [historical validation](HISTORICAL_RESEARCH_VALIDATION_PLAN.md).
+
+[News/event design](NEWS_AND_EVENT_INTELLIGENCE_PLAN.md) keeps factual events,
+exposure mechanisms and uncertainty distinct from sentiment. Political context
+remains neutral; no political ranking or desirability judgment is part of the system.
+[Durability](DATA_DURABILITY_AND_RECOVERY.md) requires encrypted off-host database
+and raw backups plus disposable restore drills, not data dumps committed to GitHub.
+[External handoff](EXTERNAL_REVIEW_HANDOFF.md) asks reviewers to falsify the architecture.
+
+# Part XXX - Business Quality and Strategic Intelligence
+
+Status: FUTURE DESIGN. This extension does not start Phase 2.6, change frozen
+formulas or close the strategic review's PIT/data-source remediation gates.
+The full contract and public Morningstar study are in
+[Qualitative and Alternative Research Architecture](QUALITATIVE_AND_ALTERNATIVE_RESEARCH_ARCHITECTURE.md).
+
+```text
+PIT source versions + evidence hierarchy + permissions
+   ├─ BusinessQualityResearch (scoped company/segment dossier)
+   ├─ CompanyStrategicEvents (typed occurrence and lifecycle assertions)
+   ├─ ProfessionalResearchArtifact (attributed external views)
+   └─ Alternative observations (qualified proxies, not assumed facts)
+             ↓
+claim corroboration + preserved disagreements + typed thesis graph
+             ↓
+frozen research snapshot / prediction ledger
+             ↓
+individual claim, risk and evidence-family outcome evaluation
+```
+
+These branches share canonical identity, availability, source/version provenance,
+coverage and corrections with the numerical engine. They are not hidden AI scores.
+Observed facts, management statements, analyst opinions, forecasts and scenarios
+remain typed and distinguishable. Deterministic replay makes a recorded judgment
+reproducible; it does not make subjective interpretation objectively true.
+
+BusinessQualityResearch covers business model, product portfolio, revenue drivers,
+customer base, geographies, competitive landscape, market share/TAM, pricing power,
+switching costs, network effects, cost advantage, intangible assets/IP, efficient
+scale, distribution advantage, ecosystem strength, R&D effectiveness, capital
+intensity, customer/supplier concentration, management execution and capital allocation.
+Store evidence, counter-evidence, confidence/reasons, source, available_at and history.
+No scoring is implemented or authorized by this design.
+
+Moat hypotheses use INTANGIBLE_ASSETS, SWITCHING_COSTS, NETWORK_EFFECT,
+COST_ADVANTAGE and EFFICIENT_SCALE. Future evolution concepts are
+MOAT_STRENGTHENING, MOAT_STABLE, MOAT_WEAKENING and UNKNOWN. Each needs scoped
+comparative evidence and a versioned review rationale; silence is not stability.
+LLM assignment alone is insufficient. We do not clone proprietary moat/star ratings.
+
+CompanyStrategicEvents extends the existing event contract with products/generations,
+customer/design wins, factories/capacity, geographies/partnerships, pricing/distribution,
+M&A/divestitures, R&D, management/restructuring, debt/repurchases, customer losses,
+supplier problems and competitor launches. Keep occurrence date separate from
+publication/availability; announcement separate from completion; estimated economic
+mechanism separate from observed results. These feed catalysts and invalidations.
+
+Professional research uses provider-neutral versioned artifacts with thesis,
+bull/bear factors, valuation assumptions, risks, moat and capital-allocation evidence,
+analyst identity when permitted, and raw provenance/rights. Morningstar public
+methodology is an intellectual reference. Owner-supplied legitimate subscriber
+reports may be reviewed for their research within permissions; systematic access
+requires licensing/API verification. No unauthorized scraping or redistribution.
+
+Management claims connect to independent supporting and contradicting evidence.
+Common-origin groups prevent a press release, its news copies and analyst echoes
+from counting as independent confirmation. Disagreement between our system,
+professional research, estimates, markets and management stays visible by matching
+claim, scope and horizon. See [evidence hierarchy](RESEARCH_EVIDENCE_HIERARCHY.md)
+and [alternative-data roadmap](ALTERNATIVE_DATA_ROADMAP.md).
+
+The thesis graph freezes CLAIM, CAUSE, EXPECTED_OUTCOME, CATALYST, RISK,
+INVALIDATION_CONDITION and EVIDENCE nodes and versioned edges. Expected outcomes
+need explicit thresholds, fiscal targets, deadlines and adjudication policies.
+Later labels ask which claim held, which risk occurred, whether external research
+disagreed and whether alternative evidence confirmed management. Causal claims
+are not proven merely by the eventual stock return.
+
+Business quality, competitive advantage duration, reinvestment opportunity, ROIC,
+growth, margins, cash flow and risk feed explicit DCF/scenario assumptions. This
+complements market/estimate momentum. Keep fundamentals, market, estimates,
+valuation, moat, news, professional and alternative evidence inspectable separately.
+Any later combination must expose contributions/interactions and pass controlled
+validation. No single unexplained AI score or silent production self-modification.
+
+Existing phase numbering remains: snapshot contracts inform 2.8, outcome evaluation
+2.9, controlled learning 2.10, deeper company research/synthesis 2.11, proposed
+production events 2.12 and broader sources 2.13. This design is not permission to
+skip foundation remediation or start those implementations.

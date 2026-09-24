@@ -111,9 +111,9 @@ Project usage:
 
 You should be able to explain:
 
-- why `fy/fp` is more authoritative than calendar month
+- why explicit fiscal context is more authoritative than calendar month, and why comparative facts require accession-level verification
 - why Q2 YTD revenue is not the same as standalone Q2 revenue
-- why a backtest must use filing date availability
+- why a backtest needs justified filing availability, not midnight on a date-only filing record
 
 Suggested searches:
 
@@ -478,7 +478,7 @@ Suggested searches:
 
 Depth: DEEP
 
-Why you need it: Phase 2.5 is planned around analyst EPS/revenue estimates,
+Why you need it: Phase 2.5 implements analyst EPS/revenue estimates,
 consensus, revisions, breadth, and forward fiscal periods.
 
 Concepts:
@@ -499,8 +499,8 @@ Concepts:
 
 Project usage:
 
-- Phase 2.5 DESIGNED / NOT IMPLEMENTED
-- future estimate momentum features
+- Phase 2.5 IMPLEMENTATION COMPLETE / INDEPENDENT REVIEW PENDING
+- implemented estimate revision features (synthetic provider only)
 - future earnings surprise work
 
 You should be able to explain:
@@ -717,7 +717,7 @@ Project usage:
 - SEC filed dates
 - market retrieved times
 - corporate action availability
-- future estimate event availability
+- estimate event availability and provider qualification
 - historical universe membership
 
 You should be able to explain:
@@ -1052,7 +1052,7 @@ For even counts:
 2, 4, 6, 8 -> median = (4 + 6) / 2 = 5
 ```
 
-Project usage: planned consensus estimates.
+Project usage: implemented consensus estimates.
 
 Limitation: ignores magnitude of extreme values.
 
@@ -1091,7 +1091,7 @@ variance = 4
 standard deviation = 2
 ```
 
-Project usage: `realized_vol_63`, planned consensus dispersion.
+Project usage: `realized_vol_63`, implemented consensus dispersion.
 
 ## Covariance
 
@@ -1346,3 +1346,41 @@ Meaning: returns compound multiplicatively.
 Project usage: backtests and portfolio performance.
 
 Limitation: average simple return can misstate compounded outcome.
+
+# Closed-Loop Research Curriculum — 2026-09-21 Addition
+
+Phase 2.6 has not started. Use these modules alongside the existing 30/90-day
+accounting and mathematics curriculum. The strategic review is CONDITIONAL PASS;
+the exercises explain why tested formulas do not alone establish valid research.
+
+| Module / depth | Learn and inspect | Exercise / evidence of understanding |
+| --- | --- | --- |
+| 21 PIT data engineering — DEEP | Source trust doc; event/period/publication/availability/retrieval/revision time; comparative fiscal contexts | Draw a release, amendment and late-download timeline; reject a midnight filing leak; distinguish filing fiscal context from comparative period identity |
+| 22 Vintage macro — DEEP | FRED/ALFRED realtime semantics and macro schema | Trace two GDP vintages; show why unique series/date cannot preserve both; specify conservative release visibility |
+| 23 Historical universes — DEEP | Membership effective vs knowledge time, identifiers, survivorship/delistings | Insert a classification correction learned later and explain why an old universe must remain unchanged |
+| 24 Replay/backtesting — DEEP | Historical validation and ledger docs; execution/cost/terminal labels | Freeze a 2021-06-30 synthetic packet and reveal 3/6/12/24m outcomes without changing inputs |
+| 25 Walk-forward/overfitting — DEEP | Training, validation, true OOS; mature labels, purging/embargo, multiple testing | Split overlapping 12m/24m labels chronologically; identify which labels are unavailable at fit time; log ten failed hypotheses too |
+| 26 Prediction calibration — DEEP | Buckets, base rates, reliability, Brier score, uncertainty | Compare two buckets with different counts; explain why score 80 is not 80% success and why horizons need separate calibration |
+| 27 Factor decay/regimes — DEEP | Effectiveness drift, bull/bear, high/low rates, sector/size slices | Show how pooled success hides a failing regime; use ex-post regime labels for diagnosis only |
+| 28 Intrinsic valuation — DEEP | DCF, cash-flow/capitalization consistency, discount rates, terminal value, margin of safety | Build bear/base/bull cash-flow scenarios and sensitivity table; explain growth with a falling stock |
+| 29 Business quality/moat — INTERMEDIATE | Comparison doc; switching costs, network effects, pricing power, capital allocation, concentration | Build one evidence-backed moat case and one rebuttal; separate disclosed metrics from assumptions |
+| 30 News/event data — INTERMEDIATE | Event plan; revisions, entity resolution, source rights, neutral macro/policy exposure | Distinguish announcement from completion and build a catalyst deadline with UNKNOWN outcomes |
+| 31 Monitoring/deployment — DEEP | Feature/provider drift, champion/challenger, version registry | Write a promotion gate before seeing results; explain why deterioration opens research rather than rewriting production |
+| 32 Durability/recovery — DEEP | Backup manifest, DB/raw consistency, encryption, restore tests | Design a disposable restore checklist and identify evidence Git alone cannot recover |
+
+Suggested learning order after the first 90 days: modules 21–24 before new
+cross-sectional research; 25–27 before performance claims; 28–30 before a complete
+company thesis; 31–32 before operational deployment. Continue accounting/valuation
+practice throughout. ML is optional after simple rules pass these gates.
+
+Month 4 deliverable: broad-universe replay protocol, mature-label splits and
+registered experiment table. Month 5: calibration diagnostics plus valuation and
+business-quality packets. Month 6: champion/challenger shadow design, drift response
+and a restore-drill specification. Do not optimize only on famous winners; include
+failed stories, false positives and unseen sectors/periods in every research exercise.
+
+Reading: [source trust](DATA_SOURCE_TRUST_AND_PIT.md), [ledger](RESEARCH_PREDICTION_AND_OUTCOME_LEDGER.md),
+[learning controls](VALIDATION_CALIBRATION_AND_LEARNING.md), [historical plan](HISTORICAL_RESEARCH_VALIDATION_PLAN.md),
+[valuation/quality](RESEARCH_PLATFORM_COMPARISON.md), [events](NEWS_AND_EVENT_INTELLIGENCE_PLAN.md),
+[durability](DATA_DURABILITY_AND_RECOVERY.md). Each module should end with a hand
+calculation or falsifiable example, not just completion of a reading list.

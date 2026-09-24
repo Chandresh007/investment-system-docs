@@ -1,0 +1,44 @@
+{
+  "schema_version": 1,
+  "audit_date": "2026-09-22",
+  "read_only": true,
+  "reported_prior_count": 32,
+  "observed_count_after_required_baseline": 34,
+  "count_difference_explanation": "The legacy test_provenance case committed one new /tmp receipt per full-suite run. The test now removes its own receipt; existing metadata was retained.",
+  "groups": [
+    {
+      "source": "sec",
+      "source_type": "api",
+      "endpoint": "api/facts",
+      "raw_object_ids": [1, 2, 3, 4, 71, 148, 149, 167, 178, 191, 204, 217, 230, 243, 256, 269, 282, 295, 308, 321, 334, 347, 439, 482, 525, 579, 611, 633, 655, 677, 709, 753, 775],
+      "count": 33,
+      "expected_hash": null,
+      "expected_size": null,
+      "file_path": "/tmp/raw_facts.json",
+      "file_status": "MISSING",
+      "archive_kind": "UNVERIFIABLE_LEGACY",
+      "category": "test-only",
+      "referenced_by": [],
+      "recovery_status": "ORIGINAL_BYTES_UNAVAILABLE_TEST_FIXTURE",
+      "action": "RETAIN_METADATA_EXCLUDE_FROM_REPLAY"
+    },
+    {
+      "source": "rss_news",
+      "source_type": null,
+      "endpoint": "http://test.com/feed",
+      "raw_object_ids": [100],
+      "count": 1,
+      "expected_hash": null,
+      "expected_size": null,
+      "file_path": "/tmp/raw_100",
+      "file_status": "MISSING",
+      "archive_kind": "UNVERIFIABLE_LEGACY",
+      "category": "test-only",
+      "referenced_by": ["news_articles test fixture"],
+      "recovery_status": "ORIGINAL_BYTES_UNAVAILABLE_TEST_FIXTURE",
+      "action": "RETAIN_METADATA_EXCLUDE_FROM_REPLAY"
+    }
+  ],
+  "runtime_report_command": "python scripts/reconcile_raw_objects.py --as-of 2026-09-22T00:00:00+00:00",
+  "policy": "A refetch must create RECONSTRUCTED_COPY with recovered_at, recovery_source, new SHA256, and original_raw_object_id. It cannot certify the missing original bytes or their prior PIT contents."
+}

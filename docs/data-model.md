@@ -8,11 +8,16 @@
 ### securities
 - Handles different security types for a company (e.g., Common Stock, Preferred).
 
+### security_identity_history
+- Bitemporal ticker, exchange, lifecycle, successor, and effective-interval evidence
+  under a permanent internal `security_id`. Ticker is metadata, not identity.
+
 ### filings
 - Tracks every SEC filing. Primary key is `accession_number` + `company_id`.
 
 ### financial_facts
-- Normalized XBRL facts. Tracks `concept`, `value`, `period_end`, and `filed_date`.
+- Normalized XBRL facts. Tracks `concept`, `value`, `period_end`, accession/filing
+  provenance, exact or conservative `available_at`, and reporting fiscal context.
 
 ### market_prices
 - Daily OHLCV data. Uniqueness: `security_id` + `date` + `source`.
@@ -22,6 +27,8 @@
 
 ### raw_data_objects
 - The audit trail for all external requests. Stores `content_hash` and `file_path`.
+- `archive_kind` distinguishes original, reconstructed, and unverifiable legacy
+  evidence. Reconstructed rows keep recovery time/source and the original row link.
 
 ### ingestion_runs
 - Metadata about every execution of the data pipeline.
@@ -32,5 +39,7 @@
 ## Point-in-Time Strategy
 To prevent look-ahead bias, we distinguish between:
 - `period_end`: The end of the financial period the data describes.
-- `filed_date`: When the data became public (the most critical date for backtesting).
+- `filed_date`: SEC date metadata; date-only values are not beginning-of-day knowledge.
+- `available_at`: Exact evidenced acceptance when available, otherwise a documented
+  conservative boundary such as next New York midnight.
 - `retrieved_at`: When our system downloaded the data.

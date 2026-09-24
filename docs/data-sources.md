@@ -1,22 +1,17 @@
-# Data Sources
+# Data sources
 
-## SEC EDGAR
-- **Role**: Primary source for fundamental financial data.
-- **Endpoints**: Company Tickers, Company Facts, Submissions.
-- **Auth**: No key required, but must use a compliant User-Agent.
-- **Rate Limit**: 10 requests per second.
+Use [Data-source trust and PIT](DATA_SOURCE_TRUST_AND_PIT.md) for temporal contracts
+and [Provider risk register](DATA_PROVIDER_RISK_REGISTER.md) for coverage, rights,
+revision and replacement risks. A historical endpoint is not proof of PIT data.
 
-## FRED (Federal Reserve Economic Data)
-- **Role**: Macroeconomic indicators.
-- **Auth**: API Key required (`FRED_API_KEY`).
-- **Endpoints**: Series metadata, Observations.
-- **Key Series**: FEDFUNDS, CPIAUCSL, GDP, etc.
-- **Rate Limit**: Standard FRED API limits.
+| Source | Current repository use | Limitation |
+| --- | --- | --- |
+| SEC Company Facts / EDGAR | Company/fundamental ingestion and filing evidence foundation | Date-only fundamental visibility and comparative contexts need qualification |
+| Yahoo chart | Direct market connector, OHLCV normalization | Not yfinance; raw price/action semantics unqualified for historical PIT |
+| FRED | API-key macro ingestion | Current history, not a vintage-preserving replay system |
+| RSS | Basic news/article ingestion | No production structured event intelligence or certified historical archive |
+| Synthetic estimates | Full estimate pipeline qualification tests | No licensed production analyst-event provider |
 
-## Market Data
-- **Role**: Historical price and volume data.
-- **Strategy**: Abstracted via `MarketDataConnector` to allow provider swapping.
-
-## News
-- **Role**: Event-driven signal detection.
-- **Strategy**: Connector interface defined; implementation planned for later Phase 1 stages.
+ALFRED, institutional market/estimate providers and additional research sources
+remain future work. Never infer storage, redistribution or AI-processing rights
+from endpoint accessibility or a connector's software license.
